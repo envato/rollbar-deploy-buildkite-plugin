@@ -1,0 +1,127 @@
+#!/bin/bash
+set -euo pipefail
+
+deploy_id_metadata_key="${BUILDKITE_PLUGIN_ROLLBAR_DEPLOY_BUILDKITE_METADATA_DEPLOY_ID:-}"
+
+main() {
+  local deploy_id_metadata_key="${BUILDKITE_PLUGIN_ROLLBAR_DEPLOY_BUILDKITE_METADATA_DEPLOY_ID:-}"
+  local environment="${BUILDKITE_PLUGIN_ROLLBAR_DEPLOY_ENVIRONMENT:-}"
+  local local_username="${BUILDKITE_PLUGIN_ROLLBAR_DEPLOY_LOCAL_USERNAME:-}"
+  local rollbar_username="${ROLLBAR_USERNAME:-}"
+  local status="${BUILDKITE_PLUGIN_ROLLBAR_DEPLOY_STATUS:-succeeded}"
+  local version="${BUILDKITE_PLUGIN_ROLLBAR_DEPLOY_VERSION:-}"
+  local build_url="${BUILDKITE_BUILD_URL:-}"
+  local job_id="${BUILDKITE_JOB_ID:-}"
+  local comment
+  local deploy_id
+  local http_method
+  local info_message
+  local response
+
+  if [ -z "${ROLLBAR_ACCESS_TOKEN:-}" ]; then
+    echo "Missing the ROLLBAR_ACCESS_TOKEN env variable."
+    exit 1
+  fi
+
+  for required_var in environment version; do
+    if [ -z "${!required_var}" ]; then
+      echo "A value is required for \"${required_var}\"."
+      exit 1
+    fi
+  done
+
+  deploy_id="$(get_deploy_id)"
+
+  if [ -z "$deploy_id" ]; then
+    http_method="POST"
+  else
+    http_method="PATCH"
+  fi
+
+  if [[ -n "$build_url" ]]; then
+    comment="Reported from Buildkite: ${build_url}"
+    if [[ -n "$job_id" ]]; then
+      comment+="#${job_id}"
+    fi
+  fi
+
+  response="$(curl -X ${http_method} "https://api.rollbar.com/api/1/deploy/${deploy_id}" \
+                   -H "X-ROLLBAR-ACCESS-TOKEN: ${ROLLBAR_ACCESS_TOKEN}" \
+                   --form environment="$environment" \
+                   --form revision="$version" \
+                   --form status="$status" \
+                   --form rollbar_username="$rollbar_username" \
+                   --form local_username="$local_username" \
+                   --form comment="$comment")"
+
+  # Get the deploy id depending on the response as they are different for POST and PATCH
+  if [ "$http_method" == "POST" ]; then
+    deploy_id="$(echo "$response" | jq -r '.data.deploy_id')"
+    info_message="Reported new deploy ${deploy_id}"
+  else
+    deploy_id="$(echo "$response" | jq -r '.result.id')"
+    info_message="Updated existing deploy ${deploy_id}"
+  fi
+
+  if ! [[ "$(echo "$response" | jq type -r)" == "object" ]]; then
+    echo "API call did not return a JSON object."
+    info "Response:"
+    info "$response"
+
+    exit 3
+  fi
+
+  # If deploy_id is null, something failed
+  if [ "$deploy_id" == "null" ]; then
+    echo "Report was unsuccessful."
+    info "Response:"
+    info "$response"
+
+    exit 2
+  fi
+
+  echo "$info_message"
+
+  set_deploy_id "$deploy_id"
+}
+
+info() {
+  echo "$@" >&2
+}
+
+# use the DEPLOY_ID (if set), otherwise use the agent metadata value (if set)
+get_deploy_id() {
+  local deploy_id
+
+  if [[ -n "${DEPLOY_ID:-}" ]]; then
+    deploy_id="$DEPLOY_ID"
+    info "Using deploy_id from env: ${DEPLOY_ID}"
+  elif [ -n "$deploy_id_metadata_key" ]; then
+    if buildkite-agent meta-data exists "$deploy_id_metadata_key"; then
+      deploy_id="$(buildkite-agent meta-data get "$deploy_id_metadata_key")"
+      info "Using deploy_id from Buildkite agent metadata key ${deploy_id_metadata_key}: ${deploy_id}"
+    else
+      deploy_id=""
+      info "No existing deploy_id in Buildkite agent metadata key ${deploy_id_metadata_key}"
+    fi
+  else
+    deploy_id=""
+    info "No existing deploy_id provided"
+  fi
+
+  echo "$deploy_id"
+}
+
+# write the deploy ID to the agent metadata value (if provided and unset)
+set_deploy_id() {
+  local deploy_id="$1"
+
+  if [ -n "$deploy_id_metadata_key" ]; then
+    if ! buildkite-agent meta-data exists "$deploy_id_metadata_key"; then
+      info "Storing deploy_id ${deploy_id} in Buildkite agent metadata key ${deploy_id_metadata_key}"
+      buildkite-agent meta-data set "$deploy_id_metadata_key" "$deploy_id"
+    fi
+  fi
+}
+
+main

@@ -1,0 +1,34 @@
+name: Rollbar Deploy
+description: Reports deployments to Rollbar
+author: https://github.com/envato
+requirements:
+  - jq
+  - curl
+configuration:
+  required:
+    - environment
+    - version
+  additionalProperties: false
+  properties:
+    environment:
+      type: string
+    version:
+      type: string
+    status:
+      type: string
+      default: succeeded
+      enum:
+        - started
+        - succeeded
+        - failed
+        - timed_out
+    local_username:
+      type: string
+    buildkite_metadata:
+      type: object
+      additionalProperties: false
+      default: null
+      properties:
+        deploy_id:
+          type: string
+          default: rollbar_deploy_id

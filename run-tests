@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+set -eu
+
+invalid_arguments() {
+  echo "usage: $0 [--debug|--debug-stubs]"
+  exit 1
+}
+
+if [[ $# -gt 1 ]]; then
+  invalid_arguments
+fi
+
+case "${1:-}" in
+  '')
+    docker-compose run --rm tests;;
+  --debug-stubs|--debug)
+    docker-compose run --rm -e CURL_STUB_DEBUG=/dev/tty -e BUILDKITE_AGENT_STUB_DEBUG=/dev/tty tests;;
+  *)
+    invalid_arguments;;
+esac
