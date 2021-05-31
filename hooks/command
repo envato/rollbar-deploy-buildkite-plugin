@@ -45,7 +45,8 @@ main() {
     fi
   fi
 
-  response="$(curl -X ${http_method} "https://api.rollbar.com/api/1/deploy/${deploy_id}" \
+  response="$(curl -fsS "https://api.rollbar.com/api/1/deploy/${deploy_id}" \
+                   -X ${http_method} \
                    -H "X-ROLLBAR-ACCESS-TOKEN: ${ROLLBAR_ACCESS_TOKEN}" \
                    --form environment="$environment" \
                    --form revision="$version" \

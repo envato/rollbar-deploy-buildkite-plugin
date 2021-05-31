@@ -42,10 +42,10 @@ stub_api_call() {
   fi
 
   if [[ "$method" == "PATCH" ]]; then
-    _EXPECTED_CURL_ARGS="-X ${method} 'https://api.rollbar.com/api/1/deploy/${deploy_id}' -H 'X-ROLLBAR-ACCESS-TOKEN: ${rollbar_access_token}' --form environment='${environment}' --form revision='${revision}' --form status='${status}' --form rollbar_username='${rollbar_username}' --form local_username='${local_username}' --form comment='${comment}'"
+    _EXPECTED_CURL_ARGS="-fsS 'https://api.rollbar.com/api/1/deploy/${deploy_id}' -X ${method} -H 'X-ROLLBAR-ACCESS-TOKEN: ${rollbar_access_token}' --form environment='${environment}' --form revision='${revision}' --form status='${status}' --form rollbar_username='${rollbar_username}' --form local_username='${local_username}' --form comment='${comment}'"
     _MOCK_RESPONSE_DATA="{\"result\": {\"id\": ${deploy_id}}}"
   else
-    _EXPECTED_CURL_ARGS="-X ${method} 'https://api.rollbar.com/api/1/deploy/' -H 'X-ROLLBAR-ACCESS-TOKEN: ${rollbar_access_token}' --form environment='${environment}' --form revision='${revision}' --form status='${status}' --form rollbar_username='${rollbar_username}' --form local_username='${local_username}' --form comment='${comment}'"
+    _EXPECTED_CURL_ARGS="-fsS 'https://api.rollbar.com/api/1/deploy/' -X ${method} -H 'X-ROLLBAR-ACCESS-TOKEN: ${rollbar_access_token}' --form environment='${environment}' --form revision='${revision}' --form status='${status}' --form rollbar_username='${rollbar_username}' --form local_username='${local_username}' --form comment='${comment}'"
     _MOCK_RESPONSE_DATA="{\"data\": {\"deploy_id\": ${deploy_id}}}"
   fi
 
