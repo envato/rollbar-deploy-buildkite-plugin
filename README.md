@@ -18,9 +18,9 @@ A [Buildkite plugin](https://buildkite.com/docs/agent/v3/plugins) which reports 
 
 ```yml
 steps:
-  # simple post-deploy report
-  - env:
-      ROLLBAR_ACCESS_TOKEN: $ROLLBAR_ACCESS_TOKEN
+  # all examples assume ROLLBAR_ACCESS_TOKEN is in your environment variables
+
+  - label: ":rollbar: simple post-deploy report"
     plugins:
       - envato/rollbar-deploy#v1.0.0:
           environment: production
@@ -29,8 +29,7 @@ steps:
 
 
   # report started, then finished later
-  - env:
-      ROLLBAR_ACCESS_TOKEN: $ROLLBAR_ACCESS_TOKEN
+  - label: ":rollbar: report deployment started"
     plugins:
       - envato/rollbar-deploy#v1.0.0:
           environment: production
@@ -40,8 +39,7 @@ steps:
           buildkite_metadata:
             deploy_id: rollbar_deploy_id
   # deploy step here...
-  - env:
-      ROLLBAR_ACCESS_TOKEN: $ROLLBAR_ACCESS_TOKEN
+  - label: ":rollbar: mark deployment as finished"
     plugins:
       - envato/rollbar-deploy#v1.0.0:
           environment: production
@@ -61,7 +59,7 @@ To maintain compability with the official GitHub actions plugin, the following v
 | Required | Name      | Description |
 | :------: | :-------- | :---------- |
 |Y| `ROLLBAR_ACCESS_TOKEN` | Credentials used to report the deployment event. |
-| | `DEPLOY_ID`            | Deploy ID used to update an existing deployment. Can be shared between steps via `buildkite_metadata` in plugin configuration instead. |
+| | `DEPLOY_ID`            | Deploy ID used to update an existing deployment. Can be shared between steps via `buildkite_metadata` in plugin configuration instead. (`DEPLOY_ID` takes precedence) |
 | | `ROLLBAR_USERNAME`     | Username of the associated Rollbar user. |
 
 ### Plugin Configuration
@@ -74,7 +72,7 @@ Most values correspond to the arguments in the [Post an event API].
 |Y| `version`        | The version being deployed. |
 | | `status`         | The status of the deploy. One of `started`, `succeeded` (default), `failed` or `timed_out`. |
 | | `local_username` | Username of the deploying user, not associated to a Rollbar user. Alternative to setting `ROLLBAR_USERNAME`. |
-| | `buildkite_metadata.deploy_id` | Metadata key used to pass a deploy ID for updates. Use the same value across multiple steps to update the existing deployment event. |
+| | `buildkite_metadata.deploy_id` | Metadata key used to pass a deploy ID for updates. Use the same value across multiple steps to update the existing deployment event. Ignored if the `DEPLOY_ID` environment variable is set. |
 
 ## License
 
@@ -102,5 +100,5 @@ Encouraging the use and creation of open source software is one of the ways we s
   [Code of Conduct]: CODE_OF_CONDUCT.md
   [webuild]: http://webuild.envato.com?utm_source=github
   [envato]: https://envato.com?utm_source=github
-  [oss]: http://opensource.envato.com//?utm_source=github
+  [oss]: http://opensource.envato.com/?utm_source=github
   [careers]: http://careers.envato.com/?utm_source=github

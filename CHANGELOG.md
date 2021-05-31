@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2021-05-31
+
 ### Added
 
 - Initial plugin release
+
+[Unreleased]: https://github.com/envato/rollbar-deploy-buildkite-plugin/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/envato/rollbar-deploy-buildkite-plugin/releases/tag/v1.0.0
